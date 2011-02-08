@@ -59,10 +59,12 @@ protected:
 	int m_GameFlags;
 	int m_UnbalancedTick;
 	bool m_ForceBalanced;
+	bool m_Instagib;
 	
 public:
 	const char *m_pGameType;
-
+	void MakeInstagib(char *new_gametype);
+	bool IsInstagib() const;
 	bool IsTeamplay() const;
 	
 	IGameController(class CGameContext *pGameServer);

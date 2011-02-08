@@ -29,6 +29,7 @@ IGameController::IGameController(class CGameContext *pGameServer)
 	
 	m_UnbalancedTick = -1;
 	m_ForceBalanced = false;
+	m_Instagib = false;
 	
 	m_aNumSpawnPoints[0] = 0;
 	m_aNumSpawnPoints[1] = 0;
@@ -142,7 +143,7 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 		SubType = WEAPON_NINJA;
 	}
 	
-	if(Type != -1)
+	if(Type != -1 && !IsInstagib())
 	{
 		CPickup *pPickup = new CPickup(&GameServer()->m_World, Type, SubType);
 		pPickup->m_Pos = Pos;
@@ -333,8 +334,15 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 	pChr->IncreaseHealth(10);
 	
 	// give default weapons
-	pChr->GiveWeapon(WEAPON_HAMMER, -1);
-	pChr->GiveWeapon(WEAPON_GUN, 10);
+	if(IsInstagib())
+	{
+		pChr->GiveWeapon(WEAPON_RIFLE,-1);
+	}
+	else
+	{
+		pChr->GiveWeapon(WEAPON_HAMMER, -1);
+		pChr->GiveWeapon(WEAPON_GUN, 10);
+	}
 }
 
 void IGameController::DoWarmup(int Seconds)
@@ -523,6 +531,16 @@ void IGameController::Tick()
 	Server()->SetBrowseInfo(m_pGameType, Prog);
 }
 
+void IGameController::MakeInstagib(char *new_gametype)
+{
+	m_Instagib = true;
+	m_pGameType = new_gametype;
+}
+
+bool IGameController::IsInstagib() const
+{
+	return m_Instagib;
+}
 
 bool IGameController::IsTeamplay() const
 {

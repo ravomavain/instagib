@@ -61,6 +61,13 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
 	
+	if(GameServer()->m_pController->IsInstagib())
+	{
+		m_ActiveWeapon = WEAPON_RIFLE;
+		m_LastWeapon = WEAPON_RIFLE;
+		m_QueuedWeapon = -1;
+	}
+	
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
 	
@@ -675,6 +682,16 @@ void CCharacter::Die(int Killer, int Weapon)
 		m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
+	if(OnSpree())
+	{
+		GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
+		GameServer()->CreateExplosion(m_Pos, m_pPlayer->GetCID(), WEAPON_RIFLE, true);
+	}
+	
+	if(GameServer()->GetPlayerChar(Killer))
+		GameServer()->GetPlayerChar(Killer)->SpreeAdd();
+	SpreeEnd(Killer);
+
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
 	Msg.m_Killer = Killer;
@@ -698,12 +715,56 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 }
 
+char m_SpreeNote[4][32] = { "is on a killing spree", "is on a rampage", "is dominating", "is unstoppable" };
+
+void CCharacter::SpreeAdd()
+{
+	m_Spree++;
+	if(m_Spree % 5 == 0)
+	{
+		int p = (int)m_Spree/5-1;
+		if(p > 3)
+			p = 3;
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s %s with %d kills!", Server()->ClientName(m_pPlayer->GetCID()), m_SpreeNote[p], m_Spree);
+		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	}
+}
+
+void CCharacter::SpreeEnd(int Killer)
+{
+	if(m_Spree >= 5)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s %d-kills killing spree was ended by %s", Server()->ClientName(m_pPlayer->GetCID()), m_Spree, Server()->ClientName(Killer));
+		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	}
+	m_Spree = 0;
+}
+
+bool CCharacter::OnSpree()
+{
+	if(m_Spree >= 5)
+		return true;
+	return false;
+}
+
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
 	m_Core.m_Vel += Force;
 	
 	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage)
 		return false;
+	
+	if(GameServer()->m_pController->IsInstagib() && Weapon == WEAPON_GAME)
+		return false;
+	
+	if(GameServer()->m_pController->IsInstagib())
+	{
+		GameServer()->CreateSound(m_Pos, SOUND_HIT, CmaskOne(From));
+		Die(From, Weapon);
+		return true;
+	}
 
 	// m_pPlayer only inflicts half damage on self
 	if(From == m_pPlayer->GetCID())

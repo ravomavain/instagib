@@ -46,6 +46,9 @@ public:
 	void FireWeapon();
 
 	void Die(int Killer, int Weapon);
+	void SpreeAdd();
+	void SpreeEnd(int Killer);
+	bool OnSpree();
 	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon);	
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
@@ -121,6 +124,7 @@ private:
 	} m_Ninja;
 
 	int m_PlayerState;// if the client is chatting, accessing a menu or so
+	int m_Spree;
 
 	// the player core for the physics	
 	CCharacterCore m_Core;

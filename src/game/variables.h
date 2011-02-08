@@ -80,3 +80,6 @@ MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SE
 MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
 #endif
+
+/* instagib */
+MACRO_CONFIG_INT(SvLaserjumps, sv_laserjumps, 1, 0, 1, CFGFLAG_SERVER, "Enable laser jumps")
