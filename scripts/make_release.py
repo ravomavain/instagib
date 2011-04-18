@@ -7,7 +7,7 @@ if len(sys.argv) != 3:
 	print(sys.argv[0], "VERSION PLATFORM")
 	sys.exit(-1)
 
-name = "teeworlds"
+name = "instagib"
 version = sys.argv[1]
 platform = sys.argv[2]
 exe_ext = ""
@@ -87,12 +87,12 @@ if use_bundle:
 	os.system("lipo -create -output "+name+" "+name+"_ppc "+name+"_x86")
 	os.system("lipo -create -output serverlaunch serverlaunch_ppc serverlaunch_x86")
 
-	# create Teeworlds appfolder
-	clientbundle_content_dir = os.path.join(package_dir, "Teeworlds.app/Contents")
+	# create Instagib appfolder
+	clientbundle_content_dir = os.path.join(package_dir, "Instagib.app/Contents")
 	clientbundle_bin_dir = os.path.join(clientbundle_content_dir, "MacOS")
 	clientbundle_resource_dir = os.path.join(clientbundle_content_dir, "Resources")
 	clientbundle_framework_dir = os.path.join(clientbundle_content_dir, "Frameworks")
-	os.mkdir(os.path.join(package_dir, "Teeworlds.app"))
+	os.mkdir(os.path.join(package_dir, "Instagib.app"))
 	os.mkdir(clientbundle_content_dir)
 	os.mkdir(clientbundle_bin_dir)
 	os.mkdir(clientbundle_resource_dir)
@@ -110,7 +110,7 @@ if use_bundle:
         <key>CFBundleDevelopmentRegion</key>
         <string>English</string>
         <key>CFBundleExecutable</key>
-        <string>teeworlds</string>
+        <string>%s</string>
         <key>CFBundleIconFile</key>
         <string>Teeworlds</string>
         <key>CFBundleInfoDictionaryVersion</key>
@@ -123,14 +123,14 @@ if use_bundle:
         <string>%s</string>
 </dict>
 </plist>
-	""" % (version))
+	""" % (name, version))
 	file(os.path.join(clientbundle_content_dir, "PkgInfo"), "w").write("APPL????")
 
-	# create Teeworlds Server appfolder
-	serverbundle_content_dir = os.path.join(package_dir, "Teeworlds Server.app/Contents")
+	# create Instagib Server appfolder
+	serverbundle_content_dir = os.path.join(package_dir, "Instagib Server.app/Contents")
 	serverbundle_bin_dir = os.path.join(serverbundle_content_dir, "MacOS")
 	serverbundle_resource_dir = os.path.join(serverbundle_content_dir, "Resources")
-	os.mkdir(os.path.join(package_dir, "Teeworlds Server.app"))
+	os.mkdir(os.path.join(package_dir, "Instagib Server.app"))
 	os.mkdir(serverbundle_content_dir)
 	os.mkdir(serverbundle_bin_dir)
 	os.mkdir(serverbundle_resource_dir)
@@ -149,7 +149,7 @@ if use_bundle:
         <key>CFBundleDevelopmentRegion</key>
         <string>English</string>
         <key>CFBundleExecutable</key>
-        <string>teeworlds_server</string>
+        <string>%s_server</string>
         <key>CFBundleIconFile</key>
         <string>Teeworlds_srv</string>
         <key>CFBundleInfoDictionaryVersion</key>
@@ -162,7 +162,7 @@ if use_bundle:
         <string>%s</string>
 </dict>
 </plist>
-	""" % (version))
+	""" % (name, version))
 	file(os.path.join(serverbundle_content_dir, "PkgInfo"), "w").write("APPL????")
 
 if use_zip:
@@ -183,7 +183,7 @@ if use_gz:
 if use_dmg:
 	print("making disk image")
 	os.system("rm -f %s.dmg %s_temp.dmg" % (package, package))
-	os.system("hdiutil create -srcfolder %s -volname Teeworlds -quiet %s_temp" % (package_dir, package))
+	os.system("hdiutil create -srcfolder %s -volname Instagib -quiet %s_temp" % (package_dir, package))
 	os.system("hdiutil convert %s_temp.dmg -format UDBZ -o %s.dmg -quiet" % (package, package))
 	os.system("rm -f %s_temp.dmg" % package)
 	
