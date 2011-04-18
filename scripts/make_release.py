@@ -83,9 +83,9 @@ if include_src:
 	shutil.copy("configure.lua", package_dir)
 
 if use_bundle:
-	os.system("lipo -create -output "+name+"_srv "+name+"_srv"+"_ppc "+name+"_srv"+"_x86")
-	os.system("lipo -create -output "+name+" "+name+"_ppc "+name+"_x86")
-	os.system("lipo -create -output serverlaunch serverlaunch_ppc serverlaunch_x86")
+	os.system("lipo -create -output "+name+"_srv "+name+"_srv"+"_ppc "+name+"_srv"+"_x86 "+name+"_srv"+"_x64")
+	os.system("lipo -create -output "+name+" "+name+"_ppc "+name+"_x86 "+name+"_x64")
+	os.system("lipo -create -output serverlaunch serverlaunch_ppc serverlaunch_x86 serverlaunch_x64")
 
 	# create Instagib appfolder
 	clientbundle_content_dir = os.path.join(package_dir, "Instagib.app/Contents")
