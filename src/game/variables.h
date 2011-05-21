@@ -88,4 +88,4 @@ MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
 #endif
 
 /* instagib */
-MACRO_CONFIG_INT(SvLaserjumps, sv_laserjumps, 1, 0, 1, CFGFLAG_SERVER, "Enable laser jumps")
+MACRO_CONFIG_INT(SvLaserjumps, sv_laserjumps, 0, 0, 1, CFGFLAG_SERVER, "Enable laser jumps")
