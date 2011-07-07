@@ -252,7 +252,8 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 							(!m_lFriends[f].m_pFriendInfo->m_aName[0] || NameHash == m_lFriends[f].m_pFriendInfo->m_NameHash))
 						{
 							m_lFriends[f].m_NumFound++;
-							break;
+							if(m_lFriends[f].m_pFriendInfo->m_aName[0])
+								break;
 						}
 					}
 				}
@@ -553,22 +554,50 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	if(DoEditBox(&g_Config.m_BrFilterServerAddress, &Button, g_Config.m_BrFilterServerAddress, sizeof(g_Config.m_BrFilterServerAddress), FontSize, &OffsetAddr))
 		Client()->ServerBrowserUpdate();
 
+	// player country
+	{
+		CUIRect Rect;
+		ServerFilter.HSplitTop(3.0f, 0, &ServerFilter);
+		ServerFilter.HSplitTop(26.0f, &Button, &ServerFilter);
+		Button.VSplitRight(60.0f, &Button, &Rect);
+		Button.HMargin(3.0f, &Button);
+		if(DoButton_CheckBox(&g_Config.m_BrFilterCountry, Localize("Player country:"), g_Config.m_BrFilterCountry, &Button))
+			g_Config.m_BrFilterCountry ^= 1;
+		
+		float OldWidth = Rect.w;
+		Rect.w = Rect.h*2;
+		Rect.x += (OldWidth-Rect.w)/2.0f;
+		Graphics()->TextureSet(m_pClient->m_pCountryFlags->GetByCountryCode(g_Config.m_BrFilterCountryIndex)->m_Texture);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, g_Config.m_BrFilterCountry?1.0f: 0.5f);
+		IGraphics::CQuadItem QuadItem(Rect.x, Rect.y, Rect.w, Rect.h);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+
+		if(g_Config.m_BrFilterCountry && UI()->DoButtonLogic(&g_Config.m_BrFilterCountryIndex, "", 0, &Rect))
+			m_Popup = POPUP_COUNTRY;
+	}
+
 	ServerFilter.HSplitBottom(5.0f, &ServerFilter, 0);
 	ServerFilter.HSplitBottom(ms_ButtonHeight-2.0f, &ServerFilter, &Button);
 	static int s_ClearButton = 0;
 	if(DoButton_Menu(&s_ClearButton, Localize("Reset filter"), 0, &Button))
 	{
+		g_Config.m_BrFilterString[0] = 0;
 		g_Config.m_BrFilterFull = 0;
 		g_Config.m_BrFilterEmpty = 0;
+		g_Config.m_BrFilterSpectators = 0;
+		g_Config.m_BrFilterFriends = 0;
+		g_Config.m_BrFilterCountry = 0;
+		g_Config.m_BrFilterCountryIndex = -1;
 		g_Config.m_BrFilterPw = 0;
 		g_Config.m_BrFilterPing = 999;
 		g_Config.m_BrFilterGametype[0] = 0;
+		g_Config.m_BrFilterGametypeStrict = 0;
 		g_Config.m_BrFilterServerAddress[0] = 0;
-		g_Config.m_BrFilterCompatversion = 1;
-		g_Config.m_BrFilterString[0] = 0;
 		g_Config.m_BrFilterPure = 1;
 		g_Config.m_BrFilterPureMap = 1;
-		g_Config.m_BrFilterGametypeStrict = 0;
+		g_Config.m_BrFilterCompatversion = 1;
 		Client()->ServerBrowserUpdate();
 	}
 }
@@ -737,7 +766,7 @@ void CMenus::RenderServerbrowserServerDetail(CUIRect View)
 				TextRender()->TextEx(&Cursor, pClan, -1);
 
 			// flag
-			Graphics()->TextureSet(m_pClient->m_pCountryFlags->Get(pSelectedServer->m_aClients[i].m_Country)->m_Texture);
+			Graphics()->TextureSet(m_pClient->m_pCountryFlags->GetByCountryCode(pSelectedServer->m_aClients[i].m_Country)->m_Texture);
 			Graphics()->QuadsBegin();
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
 			IGraphics::CQuadItem QuadItem(Flag.x, Flag.y, Flag.w, Flag.h);
