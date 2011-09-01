@@ -677,12 +677,27 @@ CLayerGroup *CEditor::GetSelectedGroup()
 CLayer *CEditor::GetSelectedLayer(int Index)
 {
 	CLayerGroup *pGroup = GetSelectedGroup();
-	if(!pGroup)
+	if(!pGroup || m_SelectedLayers.size()>1)
 		return 0x0;
 
 	if(m_SelectedLayer >= 0 && m_SelectedLayer < m_Map.m_lGroups[m_SelectedGroup]->m_lLayers.size())
 		return pGroup->m_lLayers[m_SelectedLayer];
 	return 0x0;
+}
+
+bool CEditor::IsSelected(CLayer *layer)
+{
+	if(GetSelectedLayer(0) == layer)
+		return true;
+	for(int i=0; i < m_SelectedLayers.size(); i++)
+		if (m_SelectedLayers[i] == layer)
+			return true;
+	return false;
+}
+
+bool CEditor::IsSelected(int group, int index)
+{
+	return IsSelected(m_Map.m_lGroups[group]->m_lLayers[index]);
 }
 
 CLayer *CEditor::GetSelectedLayerType(int Index, int Type)
@@ -1736,20 +1751,15 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 	static int s_Operation = OP_NONE;
 
 	// draw layer borders
-	CLayer *pEditLayers[16];
-	int NumEditLayers = 0;
-	NumEditLayers = 0;
+	array<CLayer*> pEditLayers;
 
 	if(m_ShowPicker)
 	{
-		pEditLayers[0] = &m_TilesetPicker;
-		NumEditLayers++;
+		pEditLayers.add(&m_TilesetPicker);
 	}
 	else
 	{
-		pEditLayers[0] = GetSelectedLayer(0);
-		if(pEditLayers[0])
-			NumEditLayers++;
+		pEditLayers = m_SelectedLayers;
 
 		CLayerGroup *g = GetSelectedGroup();
 		if(g)
@@ -1758,7 +1768,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 
 			RenderGrid(g);
 
-			for(int i = 0; i < NumEditLayers; i++)
+			for(int i = 0; i < pEditLayers.size(); i++)
 			{
 				if(pEditLayers[i]->m_Type != LAYERTYPE_TILES)
 					continue;
@@ -1831,10 +1841,10 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 					if(!m_Brush.IsEmpty())
 					{
 						// draw with brush
-						for(int k = 0; k < NumEditLayers; k++)
+						for(int k = 0; k < pEditLayers.size(); k++)
 						{
-							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type)
-								pEditLayers[k]->BrushDraw(m_Brush.m_lLayers[0], wx, wy);
+							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[k]->m_Type)
+								pEditLayers[k]->BrushDraw(m_Brush.m_lLayers[k], wx, wy);
 						}
 					}
 				}
@@ -1849,7 +1859,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 
 						// TODO: do all layers
 						int Grabs = 0;
-						for(int k = 0; k < NumEditLayers; k++)
+						for(int k = 0; k < pEditLayers.size(); k++)
 							Grabs += pEditLayers[k]->BrushGrab(&m_Brush, r);
 						if(Grabs == 0)
 							m_Brush.Clear();
@@ -1857,7 +1867,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 					else
 					{
 						//editor.map.groups[selected_group]->mapscreen();
-						for(int k = 0; k < NumEditLayers; k++)
+						for(int k = 0; k < pEditLayers.size(); k++)
 							pEditLayers[k]->BrushSelecting(r);
 						Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
 					}
@@ -1866,13 +1876,13 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 				{
 					if(!UI()->MouseButton(0))
 					{
-						for(int k = 0; k < NumEditLayers; k++)
-							pEditLayers[k]->FillSelection(m_Brush.IsEmpty(), m_Brush.m_lLayers[0], r);
+						for(int k = 0; k < pEditLayers.size(); k++)
+							pEditLayers[k]->FillSelection(m_Brush.IsEmpty(), m_Brush.m_lLayers[k], r);
 					}
 					else
 					{
 						//editor.map.groups[selected_group]->mapscreen();
-						for(int k = 0; k < NumEditLayers; k++)
+						for(int k = 0; k < pEditLayers.size(); k++)
 							pEditLayers[k]->BrushSelecting(r);
 						Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
 					}
@@ -1892,17 +1902,22 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 					else
 					{
 						s_Operation = OP_BRUSH_DRAW;
-						for(int k = 0; k < NumEditLayers; k++)
+						for(int k = 0; k < pEditLayers.size(); k++)
 						{
-							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type)
-								pEditLayers[k]->BrushPlace(m_Brush.m_lLayers[0], wx, wy);
+							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[k]->m_Type)
+								pEditLayers[k]->BrushPlace(m_Brush.m_lLayers[k], wx, wy);
 						}
 
 					}
 
-					CLayerTiles *pLayer = (CLayerTiles*)GetSelectedLayerType(0, LAYERTYPE_TILES);
-					if((Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT)) && pLayer)
+					if((Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT)))
+					{
+						int oldop = s_Operation;
 						s_Operation = OP_BRUSH_PAINT;
+						for(int k = 0; k < pEditLayers.size(); k++)
+							if(pEditLayers[k]->m_Type != LAYERTYPE_TILES)
+								s_Operation = oldop;
+					}
 				}
 
 				if(!m_Brush.IsEmpty())
@@ -1953,7 +1968,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 				if(g)
 					g->MapScreen();
 
-				for(int k = 0; k < NumEditLayers; k++)
+				for(int k = 0; k < pEditLayers.size(); k++)
 				{
 					if(pEditLayers[k]->m_Type == LAYERTYPE_QUADS)
 					{
@@ -2373,6 +2388,7 @@ void CEditor::RenderLayers(CUIRect ToolBox, CUIRect ToolBar, CUIRect View)
 				{
 					m_SelectedGroup = g;
 					m_SelectedLayer = 0;
+					m_SelectedLayers = m_Map.m_lGroups[g]->m_lLayers;
 
 					static int s_GroupPopupId = 0;
 					if(Result == 2)
@@ -2421,10 +2437,12 @@ void CEditor::RenderLayers(CUIRect ToolBox, CUIRect ToolBar, CUIRect View)
 				float FontSize = 10.0f;
 				while(TextRender()->TextWidth(0, FontSize, aBuf, -1) > Button.w)
 					FontSize--;
-				if(int Result = DoButton_Ex(m_Map.m_lGroups[g]->m_lLayers[i], aBuf, g==m_SelectedGroup&&i==m_SelectedLayer, &Button,
+				if(int Result = DoButton_Ex(m_Map.m_lGroups[g]->m_lLayers[i], aBuf, IsSelected(g,i), &Button,
 					BUTTON_CONTEXT, "Select layer.", 0, FontSize))
 				{
 					m_SelectedLayer = i;
+					m_SelectedLayers.clear();
+					m_SelectedLayers.add(m_Map.m_lGroups[g]->m_lLayers[i]);
 					m_SelectedGroup = g;
 					static int s_LayerPopupID = 0;
 					if(Result == 2)
@@ -3649,7 +3667,7 @@ void CEditor::Render()
 	RenderBackground(View, ms_CheckerTexture, 32.0f, 1.0f);
 
 	CUIRect MenuBar, CModeBar, ToolBar, StatusBar, EnvelopeEditor, ToolBox;
-	m_ShowPicker = Input()->KeyPressed(KEY_SPACE) != 0 && m_Dialog == DIALOG_NONE;
+	m_ShowPicker = Input()->KeyPressed(KEY_SPACE) != 0 && m_Dialog == DIALOG_NONE && m_SelectedLayers.size() <= 1;
 
 	if(m_GuiActive)
 	{
@@ -3808,6 +3826,7 @@ void CEditor::Reset(bool CreateDefault)
 	{
 	}*/
 
+	m_SelectedLayers.clear();
 	m_SelectedLayer = 0;
 	m_SelectedGroup = 0;
 	m_SelectedQuad = -1;
