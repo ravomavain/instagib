@@ -561,6 +561,9 @@ public:
 	CLayer *GetSelectedLayer(int Index);
 	CLayerGroup *GetSelectedGroup();
 
+	bool IsSelected(CLayer *layer);
+	bool IsSelected(int group, int index);
+
 	int DoProperties(CUIRect *pToolbox, CProperty *pProps, int *pIDs, int *pNewVal);
 
 	int m_Mode;
@@ -654,6 +657,7 @@ public:
 	bool m_ShowPicker;
 
 	int m_SelectedLayer;
+	array<CLayer*> m_SelectedLayers;
 	int m_SelectedGroup;
 	int m_SelectedQuad;
 	int m_SelectedPoints;
